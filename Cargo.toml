@@ -20,7 +20,8 @@ fancy-regex = "0.13"
 regex = "1"
 flate2 = "1"
 clap = { version = "4", features = ["derive"] }
-hickory-resolver = { version = "0.24", features = ["system-config"] }
+hickory-resolver = { version = "0.25.2", features = ["system-config"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }
 addr = "0.15"
 lru = "0.12"
 anyhow = "1"

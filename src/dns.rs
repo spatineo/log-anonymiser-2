@@ -4,8 +4,10 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Result;
-use hickory_resolver::config::{NameServerConfig, Protocol, ResolverConfig, ResolverOpts};
-use hickory_resolver::Resolver;
+use hickory_resolver::TokioResolver;
+use hickory_resolver::config::{NameServerConfig, ResolverConfig};
+use hickory_resolver::name_server::TokioConnectionProvider;
+use hickory_resolver::proto::xfer::Protocol;
 use lru::LruCache;
 
 pub const DEFAULT_DNS_CACHE_SIZE: usize = 100_000;
@@ -33,7 +35,8 @@ impl DnsLookupHandler for DisabledDnsLookupHandler {
 // ── Real DNS handler with cache ───────────────────────────────────────────────
 
 pub struct CachingDnsLookupHandler {
-    resolver: Resolver,
+    resolver: TokioResolver,
+    runtime: tokio::runtime::Runtime,
     cache: Mutex<LruCache<String, DnsLookupResult>>,
 }
 
@@ -42,22 +45,24 @@ impl CachingDnsLookupHandler {
         let capacity = NonZeroUsize::new(max_cache_size.unwrap_or(DEFAULT_DNS_CACHE_SIZE))
             .expect("dns cache size must be non-zero");
 
-        let mut opts = ResolverOpts::default();
-        opts.timeout = Duration::from_millis(timeout_millis);
+        let runtime = tokio::runtime::Runtime::new()?;
 
         let resolver = if servers.is_empty() {
-            let (sys_config, _) = hickory_resolver::system_conf::read_system_conf()?;
-            Resolver::new(sys_config, opts)?
+            let mut builder = TokioResolver::builder_tokio()?;
+            builder.options_mut().timeout = Duration::from_millis(timeout_millis);
+            builder.build()
         } else {
             let mut config = ResolverConfig::new();
             for server in servers {
                 let addr: std::net::SocketAddr = format!("{}:53", server).parse()?;
                 config.add_name_server(NameServerConfig::new(addr, Protocol::Udp));
             }
-            Resolver::new(config, opts)?
+            let mut builder = TokioResolver::builder_with_config(config, TokioConnectionProvider::default());
+            builder.options_mut().timeout = Duration::from_millis(timeout_millis);
+            builder.build()
         };
 
-        Ok(Self { resolver, cache: Mutex::new(LruCache::new(capacity)) })
+        Ok(Self { resolver, runtime, cache: Mutex::new(LruCache::new(capacity)) })
     }
 }
 
@@ -89,7 +94,7 @@ impl CachingDnsLookupHandler {
             Err(_) => return DnsLookupResult { success: false, reverse_name: None },
         };
 
-        match self.resolver.reverse_lookup(ip) {
+        match self.runtime.block_on(self.resolver.reverse_lookup(ip)) {
             Ok(response) => {
                 let name = response.iter().next().map(|n| {
                     let s = n.to_string();

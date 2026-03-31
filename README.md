@@ -83,12 +83,6 @@ Curly braces, the exclamation mark, and a version number (1) are used to help lo
 
 Some log files contain IPv4 addresses with port numbers. For example 127.0.0.1:32183 . These are detected and rewriten so that the port postfix is attached to the anonymised IP address and the result {!1{127.0.0.0/24,localhost}}:32183.
 
-## Todo
-
-The following issues are currently open:
-
-* Read and write GZIP compressed files.
-
 ## Reporting bugs
 
 Please report any issues found to the project GitHub issue tracker at https://github.com/spatineo/log-anonymiser-2/issues

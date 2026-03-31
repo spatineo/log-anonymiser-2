@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-rc2](https://github.com/spatineo/log-anonymiser-2/releases/tag/v2.0.0-rc2) - 2026-03-31
+
+### Fixed
+
+- improved trace message
+
+### Other
+
+- bump rc version
+- include version number in archive name
+- release v2.0.0-rc1
+- work on release-plz
+- try to use release-plz
+- interate release build
+- start work on publishing releases
+- Add GitHub Actions workflow for Rust project
+- actual code
+- initial version
+
 ## [2.0.0-rc1](https://github.com/spatineo/log-anonymiser-2/releases/tag/v2.0.0-rc1) - 2026-03-31
 
 ### Other

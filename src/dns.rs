@@ -48,25 +48,17 @@ impl CachingDnsLookupHandler {
         let runtime = tokio::runtime::Runtime::new()?;
 
         let resolver = if servers.is_empty() {
-            println!("System DNS");
             let mut builder = TokioResolver::builder_tokio()?;
-            println!(" - a1");
             builder.options_mut().timeout = Duration::from_millis(timeout_millis);
-            println!(" - a2");
             builder.build()
         } else {
-            println!("Custom DNS");
             let mut config = ResolverConfig::new();
-            println!(" - b1");
             for server in servers {
-                println!("   - {}", server);
                 let addr: std::net::SocketAddr = format!("{}:53", server).parse()?;
                 config.add_name_server(NameServerConfig::new(addr, Protocol::Udp));
             }
             let mut builder = TokioResolver::builder_with_config(config, TokioConnectionProvider::default());
-            println!(" - b2");
             builder.options_mut().timeout = Duration::from_millis(timeout_millis);
-            println!(" - b3");
             builder.build()
         };
 

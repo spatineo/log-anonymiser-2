@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install requirements
-      run: apt update -y && apt-get install -y gcc-mingw-w64-x86-64 build-essential
+      run: sudo apt update -y && sudo apt-get install -y gcc-mingw-w64-x86-64 build-essential
     - name: Configure cross-compiler
       run: rustup target add x86_64-pc-windows-gnu
     - name: Build Linux version

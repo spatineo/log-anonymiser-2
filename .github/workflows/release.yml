@@ -1,0 +1,27 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  package:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install requirements
+      run: apt update -y && apt-get install -y gcc-mingw-w64-x86-64 build-essential
+    - name: Configure cross-compiler
+      run: rustup target add x86_64-pc-windows-gnu
+    - name: Build Linux version
+      run: cargo build --release
+    - name: Build Windows version
+      run: cargo build --release --target x86_64-pc-windows-gnu
+

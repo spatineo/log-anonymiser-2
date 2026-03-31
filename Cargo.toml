@@ -1,6 +1,6 @@
 [package]
 name = "log-anonymiser"
-version = "2.0.0-rc2"
+version = "2.0.0"
 edition = "2021"
 description = "Command line tool for anonymising access log files"
 license = "GPL-3.0"

@@ -31,6 +31,18 @@ fn test_domain_name_extraction_cyprus() {
 }
 
 #[test]
+fn test_domain_name_extraction_isp() {
+    let name = identify_domain_name("82-181-179-180.bb.dnainternet.fi", false);
+    assert_eq!(name, Some("dnainternet.fi".to_string()));
+}
+
+#[test]
+fn test_domain_name_extraction_aws_ec2() {
+    let name = identify_domain_name("ec2-34-248-200-226.eu-west-1.compute.amazonaws.com", false);
+    assert_eq!(name, Some("ec2-34-248-200-226.eu-west-1.compute.amazonaws.com".to_string()));
+}
+
+#[test]
 fn test_bare_tld_no_domain() {
     // "com" is itself a public suffix — return it as-is (same behaviour as Guava)
     let name = identify_domain_name("com", false);

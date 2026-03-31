@@ -65,7 +65,7 @@ impl AnonymiserProcessor {
             if self.trace {
                 running_total += count;
                 println!(
-                    "line {}: masked ips = {} (running total = {}) elapsed_us = {}",
+                    "line {}: number of masked ips = {} (running total = {}) elapsed_us = {}",
                     line_no + 1,
                     count,
                     running_total,

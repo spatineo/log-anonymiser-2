@@ -53,22 +53,22 @@ impl AnonymiserProcessor {
 
     pub fn process(&self, input: impl Read, mut output: impl Write) -> Result<()> {
         let reader = BufReader::new(input);
-        let lines: Vec<String> = reader.lines().collect::<std::io::Result<_>>()?;
+        let lines: Vec<Vec<u8>> = reader.split(b'\n').collect::<std::io::Result<_>>()?;
 
         // Each element: (processed_line, addresses_masked, elapsed_micros)
-        let results: Vec<(String, usize, u128)> = if self.parallel_threads > 1 {
+        let results: Vec<(Vec<u8>, usize, u128)> = if self.parallel_threads > 1 {
             log::info!("Using multithreading with {} threads", self.parallel_threads);
             let pool = rayon::ThreadPoolBuilder::new()
                 .num_threads(self.parallel_threads)
                 .build()?;
             pool.install(|| {
                 lines.par_iter()
-                    .map(|line| self.process_line_timed(line))
+                    .map(|line| self.process_line_timed_u8(line.as_slice()))
                     .collect()
             })
         } else {
             log::info!("Using single-thread mode");
-            lines.iter().map(|line| self.process_line_timed(line)).collect()
+            lines.iter().map(|line| self.process_line_timed_u8(line.as_slice())).collect()
         };
 
         let mut running_total: usize = 0;
@@ -83,7 +83,7 @@ impl AnonymiserProcessor {
                     elapsed_us
                 );
             }
-            output.write_all(text.as_bytes())?;
+            output.write_all(&text)?;
             output.write_all(b"\n")?;
         }
         Ok(())
@@ -127,14 +127,13 @@ impl AnonymiserProcessor {
                             let full = caps.get(0).unwrap();
                             let ip_match = caps.get(1).unwrap();
 
-                            println!("Found IP match: {}", ip_match.as_str());
-
                             // Text between last match end and the start of the current match
-                            output.extend_from_slice(&line[last_end..full.start()]);
-                            last_end = full.end();
+                            output.extend_from_slice(&line[last_end..ascii_string.start() + full.start()]);
+                            last_end = ascii_string.start() + full.end();
 
                             // Replace the IP with anonymised token; the lookahead char stays outside the match
                             let replacement = self.anonymiser.process_address_string(ip_match.as_str());
+
                             output.extend_from_slice(replacement.as_bytes());
                             count += 1;
                         }

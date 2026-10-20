@@ -314,3 +314,11 @@ fn test_cloudfront_x_forwarded_for() {
         r"Hello --foundit--,\x20--foundit--,\x20--foundit-- world"
     );
 }
+
+#[test]
+fn binary_string_is_preserved() {
+    assert_eq!(
+        processor().process_line_u8(b"Hello 194.100.34.1 \x00w\xD6rld\x80\x81\xFF"),
+        b"Hello --foundit-- \x00w\xD6rld\x80\x81\xFF"
+    );
+}

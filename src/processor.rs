@@ -83,6 +83,12 @@ impl AnonymiserProcessor {
         self.process_line_timed(line).0
     }
 
+    pub fn process_line_u8(&self, line: &[u8]) -> Vec<u8> {
+        // fixme: refactor the line-based thing to use raw octets and just wrap the u8 version
+        let line_str = std::str::from_utf8(line).unwrap();
+        self.process_line(line_str).into_bytes()
+    }
+
     /// Returns `(processed_line, addresses_masked, elapsed_micros)`.
     fn process_line_timed(&self, line: &str) -> (String, usize, u128) {
         let start = Instant::now();

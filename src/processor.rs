@@ -95,21 +95,24 @@ impl AnonymiserProcessor {
     }
 
     pub fn process_line_u8(&self, line: &[u8]) -> Vec<u8> {
-        // fixme: refactor the line-based thing to use raw octets and just wrap the u8 version
-        let line_str = std::str::from_utf8(line).unwrap();
-        self.process_line(line_str).into_bytes()
+        self.process_line_timed_u8(line).0
+    }
+
+    fn process_line_timed(&self, line: &str) -> (String, usize, u128) {
+        let r = self.process_line_timed_u8(line.as_bytes());
+        (String::from_utf8(r.0).unwrap(), r.1, r.2)
     }
 
     /// Returns `(processed_line, addresses_masked, elapsed_micros)`.
-    fn process_line_timed(&self, line: &str) -> (String, usize, u128) {
+    fn process_line_timed_u8(&self, line: &[u8]) -> (Vec::<u8>, usize, u128) {
         let start = Instant::now();
         let re = ascii_regex();
         let ipre = ip_regex();
-        let mut output = String::with_capacity(line.len() + 32);
+        let mut output = Vec::<u8>::with_capacity(line.len() + 32);
         let mut last_end = 0;
         let mut count = 0usize;
 
-        for ascii_capture in re.captures_iter(line.as_bytes()) {
+        for ascii_capture in re.captures_iter(line) {
                 // Group 0 = full match; we divide the input line into ASCII segments so that we can ignore arbitrary byte data
                 let ascii_string = ascii_capture.get(0).unwrap();
 
@@ -127,19 +130,19 @@ impl AnonymiserProcessor {
                             println!("Found IP match: {}", ip_match.as_str());
 
                             // Text between last match end and the start of the current match
-                            output.push_str(&line[last_end..full.start()]);
+                            output.extend_from_slice(&line[last_end..full.start()]);
                             last_end = full.end();
 
                             // Replace the IP with anonymised token; the lookahead char stays outside the match
                             let replacement = self.anonymiser.process_address_string(ip_match.as_str());
-                            output.push_str(&replacement);
+                            output.extend_from_slice(replacement.as_bytes());
                             count += 1;
                         }
                     }
                 }
         }
 
-        output.push_str(&line[last_end..]);
+        output.extend_from_slice(&line[last_end..]);
         (output, count, start.elapsed().as_micros())
     }
 }

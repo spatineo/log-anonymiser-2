@@ -127,6 +127,22 @@ impl AnonymiserProcessor {
                             let full = caps.get(0).unwrap();
                             let ip_match = caps.get(1).unwrap();
 
+                            if ascii_string.start() != 0 && &line[ascii_string.start() + ip_match.start() - 1] & 0x80 != 0 {
+                                // ASCII segment not at the start of the line
+                                // preceded by non-ASCII byte means roughly
+                                //     foo\xFF<ip_match>
+                                // This is not an acceptable word boundary, so skip it.
+                                continue;
+                            }
+
+                            if ascii_string.end() < line.len() && &line[ascii_string.start() + ip_match.end()] & 0x80 != 0 {
+                                // ASCII segment not at the end of the line
+                                // followed by non-ASCII byte means roughly
+                                //     <ip_match>\xFFfoo
+                                // This is not an acceptable word boundary, so skip it.
+                                continue;
+                            }
+
                             // Text between last match end and the start of the current match
                             output.extend_from_slice(&line[last_end..ascii_string.start() + full.start()]);
                             last_end = ascii_string.start() + full.end();

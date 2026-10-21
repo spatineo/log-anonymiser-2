@@ -314,3 +314,44 @@ fn test_cloudfront_x_forwarded_for() {
         r"Hello --foundit--,\x20--foundit--,\x20--foundit-- world"
     );
 }
+
+#[test]
+fn binary_string_is_preserved() {
+    assert_eq!(
+        processor().process_line_u8(b"Hello 194.100.34.1 \x00w\xD6rld\x80\x81\xFF"),
+        b"Hello --foundit-- \x00w\xD6rld\x80\x81\xFF"
+    );
+}
+
+#[test]
+fn multi_segment_binary_string_is_preserved() {
+    assert_eq!(
+        processor().process_line_u8(b"Hello 194.100.34.1 \x00w\xD6rld\x80\x81\xFF 194.99.34.1"),
+        b"Hello --foundit-- \x00w\xD6rld\x80\x81\xFF --foundit--"
+    );
+}
+
+
+#[test]
+fn binary_string_left_crunching_ip() {
+    assert_eq!(
+        processor().process_line_u8(b"Hello \xFF194.100.34.1"),
+        b"Hello \xFF194.100.34.1"
+    );
+}
+
+#[test]
+fn binary_string_right_crunching_ip() {
+    assert_eq!(
+        processor().process_line_u8(b"Hello 194.100.34.1\x80"),
+        b"Hello 194.100.34.1\x80"
+    );
+}
+
+#[test]
+fn binary_string_double_crunching_ip() {
+    assert_eq!(
+        processor().process_line_u8(b"Hello \xFF194.100.34.1\x80"),
+        b"Hello \xFF194.100.34.1\x80"
+    );
+}
